@@ -1,4 +1,4 @@
-module mod
+module DS2023-Auction
 
 go 1.21.0
 
