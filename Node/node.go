@@ -21,6 +21,7 @@ ownId = flag.Int("id", 0, "node id")
 port = flag.Int("port", 5454, "portnumber")
 )
 
+highestAmount = make(map[int]int)
 
 func main() {
 
