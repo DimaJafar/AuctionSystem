@@ -64,8 +64,20 @@ func nodeServer(n *Node) {
 
 
 
-func (c *Node) Bidding(ctx context.Context, in *proto.BidAmount) (*proto.BidSuccess, error)
-log.Printf("Client with ID %d asked for the time\n", in.BidderId)
+func (c *Node) Bidding(ctx context.Context, in *proto.BidAmount) (*proto.BidSuccess, error) {
+	log.Printf("Bidder with ID %d has bidded\n", in.BidderId)
+	return &proto.BidSuccess{
+	SuccessMessage: "Bid has been accepted",
+	}, nil	
+}
+
+func (c *Node) AskForResult(ctx context.Context, in *proto.ResultRequest) (*proto.Result, error) {
+	log.Print("Bidder with ID %d has asked for Auction result\n", in.BidderId)
+	return &proto.Result{
+	bidderId: in.BidderId,
+	amount: in.Amount,
+	}
+}
 
 
 } 
