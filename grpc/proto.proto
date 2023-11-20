@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package AuctionSystem;
+
+option go_package = "grpc/proto";
+
+
+
+message bidAmount {
+int64 amount = 1;
+int64 bidderId = 2;
+}
+
+message bidSuccess {
+string successMessage = 1;
+}
+
+message resultRequest {
+
+}
+
+
+message result {
+int64 bidderId = 1;
+int64 amount = 2;
+}
+
+
+
+
+service Auction {
+rpc Bidding(bidAmount) returns (bidSuccess);
+rpc AskForResult(resultRequest) returns (result);
+}
+
