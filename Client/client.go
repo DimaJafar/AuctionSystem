@@ -2,11 +2,10 @@ package main
 
 import (
 	proto "DS2023-Auction/grpc"
-	"bufio"
 	"context"
 	"flag"
+	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	"google.golang.org/grpc"
@@ -26,11 +25,11 @@ var (
 func main() {
 	flag.Parse()
 
-	Client := &Client{
+	client := &Client{
 		id: *ownId,
 	}
 
-	go waitForBid(c * Client)
+	go waitForBid(client)
 
 	for {
 
@@ -52,21 +51,21 @@ func connectToServer() (proto.AuctionClient, error) {
 func waitForBid(c *Client) {
 
 	serverConnection, _ := connectToServer()
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		amount := scanner.Int()
+	var amount int
+	for {
+		fmt.Scan(&amount)
 		log.Printf("Client with id %d has bid with the amount: %d\n", c.id, amount)
 
 		// Ask the server for the time
-		timeReturnMessage, err := serverConnection.Bidding(context.Background(), &proto.BidAmount{
+		bidSuccess, err := serverConnection.Bidding(context.Background(), &proto.BidAmount{
 			BidderId: int64(c.id),
-			Amount: int64(),
+			Amount:   int64(amount),
 		})
 
 		if err != nil {
 			log.Printf(err.Error()) //if error is not null, print the error message
 		} else {
-			log.Printf("Server %s says the time is %s\n", timeReturnMessage.ServerName, timeReturnMessage.Time)
+			log.Printf(bidSuccess.SuccessMessage) //bid has been accepted.
 		} //else if there are no errors, then print "Server <server_name> says the time is" + some_time_stamp
 	}
 

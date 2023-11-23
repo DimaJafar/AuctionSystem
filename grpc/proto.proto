@@ -4,32 +4,38 @@ package AuctionSystem;
 
 option go_package = "grpc/proto";
 
-
-
 message bidAmount {
-int64 bidderId = 1;
-int64 amount = 2;
+    int64 bidderId = 1;
+    int64 amount = 2;
 }
 
 message bidSuccess {
-string successMessage = 1;
+    string successMessage = 1;
 }
 
 message resultRequest {
 
 }
 
-
 message result {
-int64 bidderId = 1;
-int64 amount = 2;
+    int64 bidderId = 1;
+    int64 amount = 2;
+}
+
+message requestState {
+    int64 ownId = 1;
+}
+
+message sendState {
+    int64 bidderId = 1;
+    int64 amount = 2;
+    string successMessage = 3;
 }
 
 
-
-
 service Auction {
-rpc Bidding(bidAmount) returns (bidSuccess);
-rpc AskForResult(resultRequest) returns (result);
+rpc Bidding(bidAmount) returns (bidSuccess); //simple rpc
+rpc AskForResult(resultRequest) returns (result); //simple rpc
+rpc AskForUpdate(requestState) returns (sendState); //simple rpc between primary and backup replica
 }
 
