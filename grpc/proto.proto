@@ -30,6 +30,7 @@ message sendState {
     int64 bidderId = 1;
     int64 amount = 2;
     string successMessage = 3;
+    int64 backupId = 4;
 }
 
 

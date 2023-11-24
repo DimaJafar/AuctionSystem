@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"net"
+	"slices"
 	"strconv"
 
 	"google.golang.org/grpc"
@@ -27,6 +28,7 @@ var (
 var amountsFromBidders = make(map[int]int)
 var biddersFromAmounts = make(map[int]int)
 var max int
+var backupIDs []int64
 
 func main() {
 
@@ -50,37 +52,85 @@ func main() {
 	}
 }
 
+func election(idSlice []int64) (int64, error) {
+	return slices.Max(idSlice), nil
+
+}
+
 func waitForInfo(n *Node) {
-	connection, _ := connect() //Auction Client
+	connection, err := connect() //Auction Client
 
-	for {
+	if err != nil {
+		log.Fatal("hej :(")
 
-		//Instantiate variable updateResult of type proto.SendState.
-		updateResult, err := connection.AskForUpdate(context.Background(), &proto.RequestState{
-			OwnId: int64(*ownId), //backup replica ID
-		})
+	} else {
+		for {
 
-		if err != nil {
-			//Before it was log.Fatalf which you print the error and afterwards quit the program.
-			log.Print(err.Error())
-		} else {
-			//Store values in respective variables
-			amountsFromBidders[int(updateResult.BidderId)] = int(updateResult.Amount) //Gives amount value from bidder id
-			biddersFromAmounts[int(updateResult.Amount)] = int(updateResult.BidderId) //Gives bidder id from amount
-			max = int(updateResult.Amount)
-			log.Printf("Backup replica with id %d has received updated state\n", *ownId)
-			log.Printf("Backup received amount %d\n", strconv.Itoa(max))
+			//Instantiate variable updateResult of type proto.SendState.
+			updateResult, err := connection.AskForUpdate(context.Background(), &proto.RequestState{
+				OwnId: int64(*ownId), //backup replica ID
+			})
+
+			if err != nil {
+				//Before it was log.Fatalf which you print the error and afterwards quit the program.
+				log.Print("Unable to connect to primary replica -> Initiating election")
+
+				//var electionResult = election(updateResult.BackupsIds)
+				log.Print(updateResult.BackupId)
+				//BackupId represents the winner from election returned from server side.
+				if updateResult.BackupId == int64(*ownId) {
+					//If true, the backup node becomes the new primary node
+					//*ownId = 1
+					//*port = 5454
+					log.Print("jeg er inde i if ")
+				} else {
+					//If false then the backup continues being a backup by requesting connection to primary
+					//go waitForInfo(n)
+					log.Print("This shouldn't occur")
+				}
+
+			} else {
+				//Store values in respective variables
+
+				amountsFromBidders[int(updateResult.BidderId)] = int(updateResult.Amount) //Gives amount value from bidder id
+				biddersFromAmounts[int(updateResult.Amount)] = int(updateResult.BidderId) //Gives bidder id from amount
+				max = int(updateResult.Amount)
+				log.Printf("Backup replica with id %d has received updated state\n", *ownId)
+				log.Printf("Backup received amount %d\n", strconv.Itoa(max))
+				//log.Print(updateResult.BackupsIds)
+			}
 		}
 	}
-
 }
 
 func (c *Node) AskForUpdate(ctx context.Context, in *proto.RequestState) (*proto.SendState, error) {
 	message := "Primary replica with id " + strconv.Itoa(*ownId) + "has sent updated state to backup with id " + strconv.Itoa(int(in.OwnId))
+
+	//Append unique ID's to backupIDs slice
+	for _, id := range backupIDs {
+		if id != int64(in.OwnId) {
+			backupIDs = append(backupIDs, int64(in.OwnId))
+		}
+		break
+	}
+/*
+	electionwinner := int64(1)
+
+	if len(backupIDs) != 0 {
+		winner, err := election(backupIDs)
+
+		if err != nil {
+			log.Print("Error in election call")
+		} else {
+			electionwinner = winner
+		}
+	}*/
+
 	return &proto.SendState{
 		BidderId:       int64(biddersFromAmounts[max]),
 		Amount:         int64(max),
 		SuccessMessage: message,
+		BackupId:       int64(2),
 	}, nil
 }
 
