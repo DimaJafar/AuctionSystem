@@ -31,7 +31,7 @@ func main() {
 		id: *ownId,
 	}
 
-	timeLimit := time.After(time.Minute)
+	timeLimit := time.After(4 * time.Minute)
 
 	go waitForBid(client)
 

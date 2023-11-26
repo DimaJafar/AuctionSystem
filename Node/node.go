@@ -53,7 +53,7 @@ func main() {
 		go waitForInfo(node)
 	}
 
-	timeLimit := time.After(2 * time.Minute)
+	timeLimit := time.After(5 * time.Minute)
 	<-timeLimit
 	log.Printf("AUCTION HAS ENDED\n")
 	os.Exit(0)
