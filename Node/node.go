@@ -7,9 +7,11 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -41,6 +43,8 @@ func main() {
 		port: *port,
 	}
 
+	timeLimit := time.After(time.Minute)
+
 	if int(*ownId) == 1 {
 		// Primary replica manager code
 		go nodeServer(node)
@@ -49,6 +53,10 @@ func main() {
 		register(node)
 		go waitForInfo(node)
 	}
+
+	<-timeLimit
+	log.Print("Timelimit reached")
+	os.Exit(0)
 
 	for {
 
@@ -104,14 +112,14 @@ func waitForInfo(n *Node) {
 
 			if err != nil {
 				close(waitchannel)
-				//log.Printf("cannot receive %v", err)
-				//log.Printf("HOho")
-
-				// Run election among replicas
 				if len(idsSlice) > 0 {
 					promotedReplicaId := election(idsSlice)
+
+					log.Printf("Primary replica has crashed...initating new election")
 					converted, _ := strconv.Atoi(promotedReplicaId)
 					if n.id == converted {
+						//print om back up har vundet
+						log.Printf("Backup replica with id %d has won the election", n.id)
 						var newIdsSlice []string
 
 						for _, id := range idsSlice {
@@ -125,19 +133,18 @@ func waitForInfo(n *Node) {
 						n.port = 5454
 						*ownId = 1
 						*joinport = 0
-						log.Printf("Mehhhh")
 						nodeServer(n)
 					} else {
+						//print om at backup er backup
+						log.Printf("Backup replica with id %d continues as backup", n.id)
 						waitForInfo(n)
 					}
-
 				}
 
 			} else {
 				amountsFromBidders[updateResult.BidderId] = int(updateResult.Amount) //Gives amount value from bidder id
 				biddersFromAmounts[int(updateResult.Amount)] = updateResult.BidderId //Gives bidder id from amount
 				max = int(updateResult.Amount)
-				//log.Printf("Backup IDs: %s", updateResult.BackupIds)
 				idsSlice = strings.Split(updateResult.BackupIds, ",")
 			}
 		}
@@ -194,6 +201,7 @@ func nodeServer(n *Node) {
 	if serveError != nil {
 		log.Fatalf("Could not serve listener")
 	}
+
 }
 
 func (backupNode *Node) RegisterBackup(ctx context.Context, in *proto.RegisterRequest) (*proto.Registered, error) {

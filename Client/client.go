@@ -34,7 +34,6 @@ func main() {
 	for {
 
 	}
-
 }
 
 func connectToServer() (proto.AuctionClient, error) {
@@ -49,24 +48,37 @@ func connectToServer() (proto.AuctionClient, error) {
 }
 
 func waitForBid(c *Client) {
-
 	serverConnection, _ := connectToServer()
-	var amount int
+	var amount string
+
 	for {
 		fmt.Scan(&amount)
-		log.Printf("Client with id %d has bid with the amount: %d\n", c.id, amount)
 
-		// Ask the server for the time
-		bidSuccess, err := serverConnection.Bidding(context.Background(), &proto.BidAmount{
-			BidderId: strconv.Itoa(c.id),
-			Amount:   int64(amount),
-		})
+		if _, err := strconv.Atoi(amount); err == nil {
+			log.Printf("Client with id %d has bid with the amount: %s\n", c.id, amount)
 
-		if err != nil {
-			log.Printf(err.Error()) //if error is not null, print the error message
+			temp, _ := strconv.Atoi(amount)
+			bidSuccess, err := serverConnection.Bidding(context.Background(), &proto.BidAmount{
+				BidderId: strconv.Itoa(c.id),
+				Amount:   int64(temp),
+			})
+
+			if err != nil {
+				//log.Print(err.Error()) //if error is not null, print the error message
+				log.Print("Auction has ended.")
+			} else {
+				log.Printf(bidSuccess.SuccessMessage) //bid has been accepted.
+			}
 		} else {
-			log.Printf(bidSuccess.SuccessMessage) //bid has been accepted.
-		} //else if there are no errors, then print "Server <server_name> says the time is" + some_time_stamp
-	}
+			log.Printf("Client with id %d has asked for the result of the auction\n", c.id)
 
+			result, err := serverConnection.AskForResult(context.Background(), &proto.ResultRequest{})
+
+			if err != nil {
+				log.Printf("Could not retrieve auction result") //if error is not null, print the error message
+			} else {
+				log.Printf("Result is: client with ID %s is in the lead with amount %d\n", result.BidderId, result.Amount)
+			}
+		}
+	}
 }
