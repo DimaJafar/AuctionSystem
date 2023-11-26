@@ -6,7 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,10 +31,28 @@ func main() {
 		id: *ownId,
 	}
 
+	timeLimit := time.After(time.Minute)
+
 	go waitForBid(client)
+
+	<-timeLimit
+	log.Printf("AUCTION HAS ENDED:\n")
+	winner()
+	os.Exit(0)
 
 	for {
 
+	}
+}
+
+func winner() {
+	serverConnection, _ := connectToServer()
+	result, err := serverConnection.AskForResult(context.Background(), &proto.ResultRequest{})
+
+	if err != nil {
+		log.Printf("Could not retrieve auction result") //if error is not null, print the error message
+	} else {
+		log.Printf("Winner is client with id %s and amount %d !!! \n", result.BidderId, result.Amount)
 	}
 }
 

@@ -8,10 +8,11 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
+
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -43,8 +44,6 @@ func main() {
 		port: *port,
 	}
 
-	timeLimit := time.After(time.Minute)
-
 	if int(*ownId) == 1 {
 		// Primary replica manager code
 		go nodeServer(node)
@@ -54,8 +53,9 @@ func main() {
 		go waitForInfo(node)
 	}
 
+	timeLimit := time.After(2 * time.Minute)
 	<-timeLimit
-	log.Print("Timelimit reached")
+	log.Printf("AUCTION HAS ENDED\n")
 	os.Exit(0)
 
 	for {
