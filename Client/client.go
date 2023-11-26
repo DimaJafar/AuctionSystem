@@ -58,7 +58,7 @@ func waitForBid(c *Client) {
 
 		// Ask the server for the time
 		bidSuccess, err := serverConnection.Bidding(context.Background(), &proto.BidAmount{
-			BidderId: int64(c.id),
+			BidderId: strconv.Itoa(c.id),
 			Amount:   int64(amount),
 		})
 
